@@ -6,5 +6,5 @@
         <bitmap
             android:gravity="center"
             android:src="@drawable/cake_100" />
-    </ item>
-</ layer-list>
+    </item>
+</layer-list>
