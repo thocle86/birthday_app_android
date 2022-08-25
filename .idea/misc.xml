@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DesignSurface">
+    <option name="filePathToZoomLevelMap">
+      <map>
+        <entry key="..\:/learning/cefim/full_stack/android/birthdayapp/app/src/main/res/drawable/splash_screen_background.xml" value="0.192" />
+        <entry key="..\:/learning/cefim/full_stack/android/birthdayapp/app/src/main/res/layout/activity_login.xml" value="0.4301507537688442" />
+      </map>
+    </option>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="Android Studio default JDK" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/build/classes" />
+  </component>
+  <component name="ProjectType">
+    <option name="id" value="Android" />
+  </component>
+</project>
