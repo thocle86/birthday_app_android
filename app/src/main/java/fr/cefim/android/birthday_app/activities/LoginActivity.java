@@ -1,7 +1,6 @@
 package fr.cefim.android.birthday_app.activities;
 
 import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -15,13 +14,12 @@ import android.widget.EditText;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.android.material.snackbar.Snackbar;
-
 import java.util.HashMap;
 import java.util.Map;
 
 import fr.cefim.android.birthday_app.R;
 import fr.cefim.android.birthday_app.databinding.ActivityLoginBinding;
+import fr.cefim.android.birthday_app.models.User;
 import fr.cefim.android.birthday_app.utils.ApiCallback;
 import fr.cefim.android.birthday_app.utils.Util;
 import fr.cefim.android.birthday_app.utils.UtilApi;
@@ -33,6 +31,8 @@ public class LoginActivity extends AppCompatActivity implements ApiCallback {
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
+
+    private User mUser;
 
     public Handler handler;
 
@@ -147,6 +147,8 @@ public class LoginActivity extends AppCompatActivity implements ApiCallback {
                     .setPositiveButton("OK", (dialog, which) -> {})
                     .create()
                     .show();
+            mUsernameView.setText("");
+            mPasswordView.setText("");
         });
     }
 
@@ -156,8 +158,15 @@ public class LoginActivity extends AppCompatActivity implements ApiCallback {
             Log.d("LOG", "*** SUCCESS ***");
             Log.d("LOG", "success_json: " + json);
             // TODO : Etablisser un comportement lors d'un success
-            // TODO : Faites la redirection
-//            startActivity(new Intent(this, MainActivity.class));
+            try {
+                Util.setUser(this, json);
+                mUser = Util.getUser(this);
+                Log.d("LOG", "user login activity: " + mUser.username);
+                // TODO : Faites la redirection
+                startActivity(new Intent(this, MainActivity.class));
+            } catch (Exception e) {
+                Log.d("LOG", "Problemos !!!!!");
+            }
 
         });
     }

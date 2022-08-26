@@ -5,9 +5,9 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
-<!--        <item name="android:textAppearanceSmall">@style/customfontstyle</item>-->
-<!--        <item name="android:textAppearanceMedium">@style/customfontstyle</item>-->
-<!--        <item name="android:textAppearanceButton">@style/customfontstyle</item>-->
+        <!--        <item name="android:textAppearanceSmall">@style/customfontstyle</item>-->
+        <!--        <item name="android:textAppearanceMedium">@style/customfontstyle</item>-->
+        <!--        <item name="android:textAppearanceButton">@style/customfontstyle</item>-->
     </style>
 
     <style name="SplashScreenTheme" parent="Theme.AppCompat.NoActionBar">
@@ -28,7 +28,16 @@
 
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
-<!--    <style name="customfontstyle" parent="@android:style/TextAppearance.Small">-->
-<!--        <item name="android:fontFamily">@font/raleway</item>-->
-<!--    </style>-->
+    <style name="NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <style name="AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+    <!--    <style name="customfontstyle" parent="@android:style/TextAppearance.Small">-->
+    <!--        <item name="android:fontFamily">@font/raleway</item>-->
+    <!--    </style>-->
 </resources>

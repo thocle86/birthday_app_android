@@ -27,7 +27,8 @@ public class Util {
     }
 
     public static User getUser(Context context) throws JSONException, ParseException {
-        return new User(context.getSharedPreferences(PREF_FILE, Context.MODE_PRIVATE).getString(USER, ""));
+        String json = context.getSharedPreferences(PREF_FILE, Context.MODE_PRIVATE).getString(USER, "");
+        return new User(json);
     }
 
     public static Date initDateFromDB(String str) throws ParseException {

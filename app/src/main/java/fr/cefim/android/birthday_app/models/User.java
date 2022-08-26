@@ -14,13 +14,11 @@ import fr.cefim.android.birthday_app.utils.Util;
 
 public class User {
 
+    public String mStringJson;
     public Long id;
     public String username;
     public String email;
-
     public ArrayList<Birthday> birthdays;
-
-    public String stringJson;
 
     //{"id":1,"username":"peter","email":"peter.bardu@gmail.com", "birthdays": [
     //        {
@@ -30,19 +28,19 @@ public class User {
     //        }
     //    ]
     // }
-    public User(String json) throws JSONException, ParseException {
+    public User(String jsonResponse) throws JSONException, ParseException {
+        mStringJson = jsonResponse;
+        JSONObject jsonObject = new JSONObject(mStringJson);
 
-        stringJson = json;
-
-        JSONObject jsonObject = new JSONObject(json);
-        id = jsonObject.getLong("id");
-        username = jsonObject.getString("username");
-        email = jsonObject.getString("email");
+        JSONObject jsonUser = jsonObject.getJSONObject("user");
+        id = jsonUser.getLong("id");
+        username = jsonUser.getString("username");
+        email = jsonUser.getString("email");
         birthdays = new ArrayList<>();
 
-        JSONArray jsonArray = jsonObject.getJSONArray("birthdays");
+        JSONArray jsonArray = jsonUser.getJSONArray("birthdays");
         for (int i = 0; i < jsonArray.length(); i++) {
-            birthdays.add(new Birthday(jsonObject.getJSONArray("birthdays").getJSONObject(i).toString()));
+            birthdays.add(new Birthday(jsonUser.getJSONArray("birthdays").getJSONObject(i).toString()));
         }
     }
 
@@ -50,13 +48,14 @@ public class User {
         birthdays.add(birthday);
 
         try {
-            JSONObject jsonObject = new JSONObject(stringJson);
-            jsonObject.getJSONArray("birthdays").put(birthday.toJson());
-            stringJson = jsonObject.toString();
+            JSONObject jsonObject = new JSONObject(mStringJson);
+            JSONObject jsonUser = jsonObject.getJSONObject("user");
+            jsonUser.getJSONArray("birthdays").put(birthday.toJson());
+            mStringJson = jsonUser.toString();
 
-            Log.d("lol", "addBirthday: " + stringJson);
+            Log.d("lol", "addBirthday: " + mStringJson);
 
-            Util.setUser(context, stringJson);
+            Util.setUser(context, mStringJson);
         } catch (JSONException e) {
             // TODO
         }
