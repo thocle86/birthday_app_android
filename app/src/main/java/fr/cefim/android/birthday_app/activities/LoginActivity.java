@@ -10,7 +10,6 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
-import android.widget.EditText;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -26,28 +25,19 @@ import fr.cefim.android.birthday_app.utils.UtilApi;
 
 public class LoginActivity extends AppCompatActivity implements ApiCallback {
 
-    private ActivityLoginBinding binding;
-    private EditText mUsernameView;
-    private EditText mPasswordView;
-    private View mProgressView;
-    private View mLoginFormView;
+    private ActivityLoginBinding b;
 
     private User mUser;
 
-    public Handler mHandler;
+    private Handler mHandler;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        binding = ActivityLoginBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
+        b = ActivityLoginBinding.inflate(getLayoutInflater());
+        setContentView(b.getRoot());
 
         mHandler = new Handler();
-
-        mUsernameView = findViewById(R.id.username);
-        mPasswordView = findViewById(R.id.password);
-        mLoginFormView = findViewById(R.id.login);
-        mProgressView = findViewById(R.id.loading);
 
         TextWatcher textWatcher = new TextWatcher() {
             @Override
@@ -62,56 +52,50 @@ public class LoginActivity extends AppCompatActivity implements ApiCallback {
 
             @Override
             public void afterTextChanged(Editable s) {
-                String username = mUsernameView.getText().toString();
-                String password = mPasswordView.getText().toString();
+                String username = b.loginEditTextUsername.getText().toString();
+                String password = b.loginEditTextPassword.getText().toString();
 
-                mLoginFormView.setEnabled(Util.isUserNameValid(username) && Util.isPasswordValid(password));
+                b.loginButtonSignInOrSignUp.setEnabled(Util.isUserNameValid(username) && Util.isPasswordValid(password));
             }
         };
 
-        mUsernameView.addTextChangedListener(textWatcher);
-        mPasswordView.addTextChangedListener(textWatcher);
+        b.loginEditTextUsername.addTextChangedListener(textWatcher);
+        b.loginEditTextPassword.addTextChangedListener(textWatcher);
 
-        mPasswordView.setOnEditorActionListener((v, actionId, event) -> {
+        b.loginEditTextPassword.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_DONE) {
-                // TODO : appeler la méthode pour tenter le login
                 this.attemptLogin();
             }
             return false;
         });
 
-        mLoginFormView.setOnClickListener(v -> {
-            // TODO : appeler la méthode pour tenter le login
+        b.loginButtonSignInOrSignUp.setOnClickListener(v -> {
             this.attemptLogin();
         });
     }
 
     private void attemptLogin() {
-
-        mUsernameView.setError(null);
-        mPasswordView.setError(null);
-
-        String username = mUsernameView.getText().toString().trim();
-        Log.d("LOG", username);
-        String password = mPasswordView.getText().toString().trim();
-        Log.d("LOG", password);
+        b.loginEditTextUsername.setError(null);
+        b.loginEditTextPassword.setError(null);
+        String username = b.loginEditTextUsername.getText().toString().trim();
+        String password = b.loginEditTextPassword.getText().toString().trim();
 
         boolean cancel = false;
         View focusView = null;
 
         if (!Util.isPasswordValid(password)) {
-            mPasswordView.setError(getString(R.string.invalid_password));
-            focusView = mPasswordView;
+            b.loginEditTextPassword.setError(getString(R.string.invalid_password));
+            focusView = b.loginEditTextPassword;
             cancel = true;
         }
 
         if (TextUtils.isEmpty(username)) {
-            mUsernameView.setError(getString(R.string.error_field_required));
-            focusView = mUsernameView;
+            b.loginEditTextUsername.setError(getString(R.string.error_field_required));
+            focusView = b.loginEditTextUsername;
             cancel = true;
         } else if (!Util.isUserNameValid(username)) {
-            mUsernameView.setError(getString(R.string.invalid_username));
-            focusView = mUsernameView;
+            b.loginEditTextUsername.setError(getString(R.string.invalid_username));
+            focusView = b.loginEditTextUsername;
             cancel = true;
         }
 
@@ -124,31 +108,29 @@ public class LoginActivity extends AppCompatActivity implements ApiCallback {
             credentials.put("username", username);
             credentials.put("password", password);
 
-            // TODO : Appeler la méthode permettant de faire un appel API via POST
-            Log.d("LOG", UtilApi.URL_LOGIN);
-            UtilApi.post(UtilApi.URL_LOGIN, credentials, null,this);
+            UtilApi.post(UtilApi.URL_LOGIN, credentials, null, this);
         }
     }
 
     private void showProgress(boolean visible) {
-        mProgressView.setVisibility(visible ? View.VISIBLE : View.INVISIBLE);
+        b.loginProgressBarLoader.setVisibility(visible ? View.VISIBLE : View.INVISIBLE);
     }
 
     @Override
     public void onFailure(String json) {
-        mProgressView.setVisibility(View.INVISIBLE);
+        b.loginProgressBarLoader.setVisibility(View.INVISIBLE);
         mHandler.post(() -> {
             Log.d("LOG", "!!! ON FAILURE !!!: ");
             Log.d("LOG", "fail_json: " + json);
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
-
             builder.setTitle("Une erreur est survenue !")
                     .setMessage("Login ou Mot de passe invalide.\nVeuillez réessayer.")
-                    .setPositiveButton("OK", (dialog, which) -> {})
+                    .setPositiveButton("OK", (dialog, which) -> {
+                    })
                     .create()
                     .show();
-            mUsernameView.setText("");
-            mPasswordView.setText("");
+            b.loginEditTextUsername.setText("");
+            b.loginEditTextPassword.setText("");
         });
     }
 
@@ -157,13 +139,11 @@ public class LoginActivity extends AppCompatActivity implements ApiCallback {
         mHandler.post(() -> {
             Log.d("LOG", "*** ON RESPONSE SUCCESS ***");
             Log.d("LOG", "success_json: " + json);
-            // TODO : Etablisser un comportement lors d'un success
             try {
                 Util.setUser(this, json);
                 mUser = Util.getUser(this);
                 Log.d("LOG", "token: " + mUser.token);
                 Log.d("LOG", "username: " + mUser.username);
-                // TODO : Faites la redirection
                 startActivity(new Intent(this, MainActivity.class));
                 finish();
             } catch (Exception e) {
@@ -175,19 +155,19 @@ public class LoginActivity extends AppCompatActivity implements ApiCallback {
 
     @Override
     public void onResponseFail(String json) {
-        mProgressView.setVisibility(View.INVISIBLE);
+        b.loginProgressBarLoader.setVisibility(View.INVISIBLE);
         mHandler.post(() -> {
             Log.d("LOG", "!!! ON RESPONSE FAIL !!!: ");
             Log.d("LOG", "fail_json: " + json);
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
-
             builder.setTitle("Une erreur est survenue !")
                     .setMessage("Login ou Mot de passe invalide.\nVeuillez réessayer.")
-                    .setPositiveButton("OK", (dialog, which) -> {})
+                    .setPositiveButton("OK", (dialog, which) -> {
+                    })
                     .create()
                     .show();
-            mUsernameView.setText("");
-            mPasswordView.setText("");
+            b.loginEditTextUsername.setText("");
+            b.loginEditTextPassword.setText("");
         });
     }
 }
