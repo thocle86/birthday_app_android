@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import fr.cefim.android.birthday_app.R;
 import fr.cefim.android.birthday_app.models.Birthday;
@@ -18,9 +19,9 @@ import fr.cefim.android.birthday_app.utils.Util;
 public class BirthdayAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private Context mContext;
-    private ArrayList<ListItem> mListItems;
+    private List<ListItem> mListItems;
 
-    public BirthdayAdapter(Context mContext, ArrayList<ListItem> listItems) {
+    public BirthdayAdapter(Context mContext, List<ListItem> listItems) {
         this.mContext = mContext;
         this.mListItems = listItems;
     }
@@ -56,7 +57,7 @@ public class BirthdayAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         switch (viewHolder.getItemViewType()) {
 
             case ListItem.TYPE_BIRTHDAY:
-                Birthday birthday = ((BirthdayItem) mListItems.get(position)).birthday;
+                Birthday birthday = ((BirthdayItem) mListItems.get(position)).mBirthday;
                 BirthDayViewHolder birthDayViewHolder = (BirthDayViewHolder) viewHolder;
                 birthDayViewHolder.mTextViewName.setText(birthday.firstname + " " + birthday.lastname);
                 birthDayViewHolder.mTextViewDate.setText(birthday.date.getDate()+"");

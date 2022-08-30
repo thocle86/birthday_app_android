@@ -4,10 +4,11 @@ import fr.cefim.android.birthday_app.models.Birthday;
 
 public class BirthdayItem extends ListItem {
 
-    public Birthday birthday;
+    public Birthday mBirthday;
 
     public BirthdayItem(Birthday birthday) {
-        this.birthday = birthday;
+        mBirthday = birthday;
+        this.index = (mBirthday.date.getMonth() + 1) * 100 + mBirthday.date.getDate();
     }
 
     @Override

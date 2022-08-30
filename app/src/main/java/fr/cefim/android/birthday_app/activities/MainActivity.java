@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -19,14 +20,19 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.snackbar.Snackbar;
 
+import org.json.JSONException;
+
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import fr.cefim.android.birthday_app.R;
 import fr.cefim.android.birthday_app.adapters.BirthdayAdapter;
+import fr.cefim.android.birthday_app.adapters.BirthdayItem;
 import fr.cefim.android.birthday_app.adapters.ListItem;
 import fr.cefim.android.birthday_app.databinding.ActivityMainBinding;
 import fr.cefim.android.birthday_app.models.Birthday;
@@ -40,6 +46,8 @@ public class MainActivity extends AppCompatActivity implements ApiCallback {
     private ActivityMainBinding mBinding;
     private BirthdayAdapter mBirthdayAdapter;
     private User mUser;
+    public Handler handler;
+    private List<ListItem> mListItems;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +55,8 @@ public class MainActivity extends AppCompatActivity implements ApiCallback {
 //        setContentView(R.layout.activity_main);
         mBinding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(mBinding.getRoot());
+
+        handler = new Handler();
 
 //        Toolbar toolbar = findViewById(R.id.toolbar);
         Toolbar toolbar = mBinding.toolbar;
@@ -60,16 +70,15 @@ public class MainActivity extends AppCompatActivity implements ApiCallback {
             finish();
         }
 
-        ArrayList<ListItem> listItems = Util.createListItems(mUser.birthdays);
+        mListItems = Util.createListItems(mUser.birthdays);
 
         final RecyclerView recyclerView = findViewById(R.id.recycler_view_home);
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
-        mBirthdayAdapter = new BirthdayAdapter(this, listItems);
+        mBirthdayAdapter = new BirthdayAdapter(this, mListItems);
         recyclerView.setAdapter(mBirthdayAdapter);
 
-//        findViewById(R.id.fab).setOnClickListener(v -> showDialogAddNewBirthday());
-        mBinding.fab.setOnClickListener(view -> showDialogAddNewBirthday());
+        findViewById(R.id.fab).setOnClickListener(v -> showDialogAddNewBirthday());
     }
 
     private void showDialogAddNewBirthday() {
@@ -98,13 +107,13 @@ public class MainActivity extends AppCompatActivity implements ApiCallback {
 
         builder.setTitle("Nouvel anniversaire ?");
         builder.setView(view);
-        builder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
+        builder.setPositiveButton(android.R.string.ok, (dialog, id) -> {
+            // TODO : récupérer les valeurs et appeler la méthode addNewBirthday
 
-                // TODO : récupérer les valeurs et appeler la méthode addNewBirthday
-
-            }
+            String date = editTextDate.getText().toString();
+            String firstname = editTextFirstName.getText().toString();
+            String lastname = editTextLastName.getText().toString();
+            this.addNewBirthday(date, firstname, lastname);
         });
 
         builder.setNegativeButton(android.R.string.cancel, null);
@@ -127,21 +136,19 @@ public class MainActivity extends AppCompatActivity implements ApiCallback {
                 throw new Exception("Nom incorrecte");
             }
 
-            Birthday birthday = new Birthday(date, firstname, lastname);
+//            Birthday birthday = new Birthday(date, firstname, lastname);
 
             // TODO : Appeler la méthode qui ajoute cet anniversaire à la liste des anniversaires de cet utilisateur (comprendre ce que fait la méthode)
 
-            mBirthdayAdapter.setListItems(Util.createListItems(mUser.birthdays));
-
             // Appel API POST /users/id/birthdays
             Map<String, String> map = new HashMap<>();
-            map.put("firstname", birthday.firstname);
-            map.put("lastname", birthday.lastname);
-            map.put("date", Util.printDate(birthday.date));
+            map.put("date", Util.printDate(date));
+            map.put("firstname", firstname);
+            map.put("lastname", lastname);
 
-            String[] id = {mUser.id.toString()};
+            String url = String.format(UtilApi.CREATE_BIRTHDAY, mUser.id);
 
-            UtilApi.post(String.format(UtilApi.CREATE_BIRTHDAY, id), map, MainActivity.this);
+            UtilApi.post(url, map, mUser.token, this);
 
         } catch (ParseException e) {
             Toast.makeText(MainActivity.this, "Date incorrecte", Toast.LENGTH_SHORT).show();
@@ -151,14 +158,43 @@ public class MainActivity extends AppCompatActivity implements ApiCallback {
     }
 
     @Override
-    public void fail(String json) {
-        Log.d("lol", "fail: " + json);
+    public void onFailure(String json) {
+        handler.post(() -> {
+            Log.d("LOG", "!!! ON FAILURE !!!: ");
+            Log.d("LOG", "fail_json: " + json);
+        });
     }
 
     @Override
-    public void success(String json) {
-        Log.d("lol", "success: " + json);
-        Snackbar.make(findViewById(R.id.coordinator_root), "Anniversaire ajouté", Snackbar.LENGTH_SHORT).show();
+    public void onResponseSuccess(String json) {
+        handler.post(() -> {
+            Log.d("LOG", "*** ON RESPONSE SUCCESS ***");
+            Log.d("LOG", "success_json: " + json);
+            Snackbar.make(findViewById(R.id.coordinator_root), "Anniversaire ajouté", Snackbar.LENGTH_SHORT).show();
+
+            try {
+                Birthday birthday = new Birthday(json);
+                mUser.addBirthday(this, birthday);
+                BirthdayItem birthdayItem = new BirthdayItem(birthday);
+                Log.d("LOG", String.valueOf(birthdayItem.index));
+                mListItems.add(birthdayItem);
+                Collections.sort(mListItems);
+                mBirthdayAdapter.notifyDataSetChanged();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+
+        });
+    }
+
+    @Override
+    public void onResponseFail(String json) {
+        handler.post(() -> {
+            Log.d("LOG", "!!! ON RESPONSE FAIL !!!: ");
+            Log.d("LOG", "fail_json: " + json);
+        });
     }
 
 }

@@ -25,6 +25,7 @@ public class SplashScreenActivity extends AppCompatActivity {
 //            mUser = Util.getUser(this);
 //            Log.d("LOG", "user splash activity: " + mUser.username);
 //            startActivity(new Intent(this, MainActivity.class));
+//            finish();
 //        } catch (Exception e) {
 //            startActivity(new Intent(this, LoginActivity.class));
 //            finish();

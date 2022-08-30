@@ -17,6 +17,7 @@ public class User {
     public String mStringJson;
     public Long id;
     public String username;
+    public String token;
     public String email;
     public ArrayList<Birthday> birthdays;
 
@@ -31,9 +32,10 @@ public class User {
     public User(String jsonResponse) throws JSONException, ParseException {
         mStringJson = jsonResponse;
         JSONObject jsonObject = new JSONObject(mStringJson);
-
-        JSONObject jsonUser = jsonObject.getJSONObject("user");
+        JSONObject jsonMyPrincipalUser = jsonObject.getJSONObject("myPrincipalUser");
+        JSONObject jsonUser = jsonMyPrincipalUser.getJSONObject("user");
         id = jsonUser.getLong("id");
+        token = "Bearer " + jsonObject.getString("token");
         username = jsonUser.getString("username");
         email = jsonUser.getString("email");
         birthdays = new ArrayList<>();

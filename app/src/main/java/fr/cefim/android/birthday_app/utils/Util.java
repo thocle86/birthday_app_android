@@ -2,15 +2,19 @@ package fr.cefim.android.birthday_app.utils;
 
 import android.content.Context;
 import android.text.TextUtils;
+import android.util.Log;
 
 import org.json.JSONException;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 
+import fr.cefim.android.birthday_app.adapters.BirthdayItem;
 import fr.cefim.android.birthday_app.adapters.ListItem;
+import fr.cefim.android.birthday_app.adapters.MonthItem;
 import fr.cefim.android.birthday_app.models.Birthday;
 import fr.cefim.android.birthday_app.models.User;
 
@@ -62,10 +66,22 @@ public class Util {
 
         ArrayList<ListItem> listItems = new ArrayList<>();
 
-        int monthNumber = 0;
+        int monthNumber = 100;
         String[] months = {"Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Aout", "Septembre", "Octobre", "Novembre", "Décembre"};
 
+        for (String month : months) {
+            MonthItem monthItem = new MonthItem(month, monthNumber);
+            listItems.add(monthItem);
+            monthNumber += 100;
+        }
+
+        for (Birthday birthday : birthdays) {
+            BirthdayItem birthdayItem = new BirthdayItem(birthday);
+            listItems.add(birthdayItem);
+        }
+
         // TODO : trier la liste en fonction des mois d'anniversaire
+        Collections.sort(listItems);
 
         return listItems;
     }

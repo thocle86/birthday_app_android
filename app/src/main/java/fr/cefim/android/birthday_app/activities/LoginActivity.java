@@ -34,7 +34,7 @@ public class LoginActivity extends AppCompatActivity implements ApiCallback {
 
     private User mUser;
 
-    public Handler handler;
+    public Handler mHandler;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -42,7 +42,7 @@ public class LoginActivity extends AppCompatActivity implements ApiCallback {
         binding = ActivityLoginBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        handler = new Handler();
+        mHandler = new Handler();
 
         mUsernameView = findViewById(R.id.username);
         mPasswordView = findViewById(R.id.password);
@@ -120,13 +120,13 @@ public class LoginActivity extends AppCompatActivity implements ApiCallback {
         } else {
             showProgress(true);
 
-            Map<String, String> map = new HashMap<>();
-            map.put("username", username);
-            map.put("password", password);
+            Map<String, String> credentials = new HashMap<>();
+            credentials.put("username", username);
+            credentials.put("password", password);
 
             // TODO : Appeler la méthode permettant de faire un appel API via POST
             Log.d("LOG", UtilApi.URL_LOGIN);
-            UtilApi.post(UtilApi.URL_LOGIN, map, this);
+            UtilApi.post(UtilApi.URL_LOGIN, credentials, null,this);
         }
     }
 
@@ -135,10 +135,10 @@ public class LoginActivity extends AppCompatActivity implements ApiCallback {
     }
 
     @Override
-    public void fail(final String json) {
+    public void onFailure(String json) {
         mProgressView.setVisibility(View.INVISIBLE);
-        handler.post(() -> {
-            Log.d("LOG", "!!! FAIL !!!: ");
+        mHandler.post(() -> {
+            Log.d("LOG", "!!! ON FAILURE !!!: ");
             Log.d("LOG", "fail_json: " + json);
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
@@ -153,21 +153,41 @@ public class LoginActivity extends AppCompatActivity implements ApiCallback {
     }
 
     @Override
-    public void success(final String json) {
-        handler.post(() -> {
-            Log.d("LOG", "*** SUCCESS ***");
+    public void onResponseSuccess(String json) {
+        mHandler.post(() -> {
+            Log.d("LOG", "*** ON RESPONSE SUCCESS ***");
             Log.d("LOG", "success_json: " + json);
             // TODO : Etablisser un comportement lors d'un success
             try {
                 Util.setUser(this, json);
                 mUser = Util.getUser(this);
-                Log.d("LOG", "user login activity: " + mUser.username);
+                Log.d("LOG", "token: " + mUser.token);
+                Log.d("LOG", "username: " + mUser.username);
                 // TODO : Faites la redirection
                 startActivity(new Intent(this, MainActivity.class));
+                finish();
             } catch (Exception e) {
                 Log.d("LOG", "Problemos !!!!!");
             }
 
+        });
+    }
+
+    @Override
+    public void onResponseFail(String json) {
+        mProgressView.setVisibility(View.INVISIBLE);
+        mHandler.post(() -> {
+            Log.d("LOG", "!!! ON RESPONSE FAIL !!!: ");
+            Log.d("LOG", "fail_json: " + json);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+            builder.setTitle("Une erreur est survenue !")
+                    .setMessage("Login ou Mot de passe invalide.\nVeuillez réessayer.")
+                    .setPositiveButton("OK", (dialog, which) -> {})
+                    .create()
+                    .show();
+            mUsernameView.setText("");
+            mPasswordView.setText("");
         });
     }
 }
