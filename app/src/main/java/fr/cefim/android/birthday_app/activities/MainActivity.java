@@ -9,9 +9,12 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.snackbar.Snackbar;
 
@@ -23,6 +26,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import fr.cefim.android.birthday_app.R;
 import fr.cefim.android.birthday_app.adapters.BirthdayAdapter;
@@ -36,7 +40,7 @@ import fr.cefim.android.birthday_app.utils.ApiCallback;
 import fr.cefim.android.birthday_app.utils.Util;
 import fr.cefim.android.birthday_app.utils.UtilApi;
 
-public class MainActivity extends AppCompatActivity implements ApiCallback {
+public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding b;
 
@@ -73,6 +77,53 @@ public class MainActivity extends AppCompatActivity implements ApiCallback {
         b.contentList.recyclerViewBirthdays.setAdapter(mBirthdayAdapter);
 
         b.floatingActionButtonAddBirthday.setOnClickListener(v -> showDialogAddNewBirthday());
+
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            /**
+             * To remove swipe in Month item
+             */
+            @Override
+            public int getSwipeDirs(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+                if (viewHolder instanceof BirthdayAdapter.MonthViewHolder) return 0;
+                return super.getSwipeDirs(recyclerView, viewHolder);
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                BirthdayItem birthdayItem = (BirthdayItem) mListItems.get(viewHolder.getAdapterPosition());
+                AtomicBoolean isBirthdayDeleted = new AtomicBoolean(true);
+                int position = viewHolder.getAdapterPosition();
+                mListItems.remove(position);
+                mBirthdayAdapter.notifyItemRemoved(position);
+
+                Snackbar
+                        .make(
+                                b.mainCoordinatorLayout,
+                                String.format("%s %s est supprimé", birthdayItem.birthday.firstname, birthdayItem.birthday.lastname),
+                                Snackbar.LENGTH_LONG
+                        )
+                        .setAction("Annuler", v -> {
+                            mListItems.add(position, birthdayItem);
+                            mBirthdayAdapter.notifyItemInserted(position);
+                            isBirthdayDeleted.set(false);
+                        })
+                        .addCallback(new Snackbar.Callback() {
+                            @Override
+                            public void onDismissed(Snackbar snackbar, int event) {
+                                if (event == Snackbar.Callback.DISMISS_EVENT_TIMEOUT && isBirthdayDeleted.get()) {
+                                    deleteBirthday(birthdayItem.birthday);
+                                }
+                            }
+                        })
+                        .show();
+            }
+        });
+        itemTouchHelper.attachToRecyclerView(b.contentList.recyclerViewBirthdays);
     }
 
     private void showDialogAddNewBirthday() {
@@ -102,14 +153,14 @@ public class MainActivity extends AppCompatActivity implements ApiCallback {
             String date = b.editTextDate.getText().toString();
             String firstname = b.editTextFirstname.getText().toString();
             String lastname = b.editTextLastname.getText().toString();
-            this.addNewBirthday(date, firstname, lastname);
+            this.addBirthday(date, firstname, lastname);
         });
 
         builder.setNegativeButton(android.R.string.cancel, null);
         builder.create().show();
     }
 
-    private void addNewBirthday(String dateStr, String firstname, String lastname) {
+    private void addBirthday(String dateStr, String firstname, String lastname) {
         try {
             if (dateStr == null || dateStr.isEmpty()) {
                 throw new Exception("Date incorrecte");
@@ -132,7 +183,47 @@ public class MainActivity extends AppCompatActivity implements ApiCallback {
 
             String url = String.format(UtilApi.CREATE_BIRTHDAY, mUser.id);
 
-            UtilApi.post(url, birthdayBody, mUser.token, this);
+            UtilApi.post(url, birthdayBody, mUser.token, new ApiCallback() {
+                @Override
+                public void onFailure(String json) {
+                    mHandler.post(() -> {
+                        Log.d("LOG", "!!! ON FAILURE !!!: ");
+                        Log.d("LOG", "fail_json: " + json);
+                    });
+                }
+
+                @Override
+                public void onResponseSuccess(String json) {
+                    mHandler.post(() -> {
+                        Log.d("LOG", "*** ON RESPONSE SUCCESS ***");
+                        Log.d("LOG", "success_json: " + json);
+                        Snackbar.make(findViewById(R.id.main_coordinator_layout), "Anniversaire ajouté", Snackbar.LENGTH_SHORT).show();
+
+                        try {
+                            Birthday birthday = new Birthday(json);
+                            mUser.addBirthday(MainActivity.this, birthday);
+                            BirthdayItem birthdayItem = new BirthdayItem(birthday);
+                            Log.d("LOG", String.valueOf(birthdayItem.index));
+                            mListItems.add(birthdayItem);
+                            Collections.sort(mListItems);
+                            mBirthdayAdapter.notifyDataSetChanged();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+
+                    });
+                }
+
+                @Override
+                public void onResponseFail(String json) {
+                    mHandler.post(() -> {
+                        Log.d("LOG", "!!! ON RESPONSE FAIL !!!: ");
+                        Log.d("LOG", "fail_json: " + json);
+                    });
+                }
+            });
 
         } catch (ParseException e) {
             Toast.makeText(MainActivity.this, "Date incorrecte", Toast.LENGTH_SHORT).show();
@@ -141,44 +232,34 @@ public class MainActivity extends AppCompatActivity implements ApiCallback {
         }
     }
 
-    @Override
-    public void onFailure(String json) {
-        mHandler.post(() -> {
-            Log.d("LOG", "!!! ON FAILURE !!!: ");
-            Log.d("LOG", "fail_json: " + json);
-        });
-    }
-
-    @Override
-    public void onResponseSuccess(String json) {
-        mHandler.post(() -> {
-            Log.d("LOG", "*** ON RESPONSE SUCCESS ***");
-            Log.d("LOG", "success_json: " + json);
-            Snackbar.make(findViewById(R.id.coordinator_root), "Anniversaire ajouté", Snackbar.LENGTH_SHORT).show();
-
-            try {
-                Birthday birthday = new Birthday(json);
-                mUser.addBirthday(this, birthday);
-                BirthdayItem birthdayItem = new BirthdayItem(birthday);
-                Log.d("LOG", String.valueOf(birthdayItem.index));
-                mListItems.add(birthdayItem);
-                Collections.sort(mListItems);
-                mBirthdayAdapter.notifyDataSetChanged();
-            } catch (JSONException e) {
-                e.printStackTrace();
-            } catch (ParseException e) {
-                e.printStackTrace();
+    private void deleteBirthday(Birthday birthday) {
+        Log.d("LOG", "birthday id: " + birthday.id);
+        UtilApi.delete(String.format(UtilApi.DELETE_BIRTHDAY, mUser.id, birthday.id), mUser.token, new ApiCallback() {
+            @Override
+            public void onFailure(String json) {
+                mHandler.post(() -> {
+                    Log.d("LOG", "!!! ON FAILURE !!!: ");
+                    Log.d("LOG", "fail_json: " + json);
+                });
             }
 
-        });
-    }
+            @Override
+            public void onResponseSuccess(String json) {
+                mHandler.post(() -> {
+                    Log.d("LOG", "*** ON RESPONSE SUCCESS ***");
+                    Log.d("LOG", "success_json: " + json);
+                });
+            }
 
-    @Override
-    public void onResponseFail(String json) {
-        mHandler.post(() -> {
-            Log.d("LOG", "!!! ON RESPONSE FAIL !!!: ");
-            Log.d("LOG", "fail_json: " + json);
+            @Override
+            public void onResponseFail(String json) {
+                mHandler.post(() -> {
+                    Log.d("LOG", "!!! ON RESPONSE FAIL !!!: ");
+                    Log.d("LOG", "fail_json: " + json);
+                });
+            }
         });
+
     }
 
 }

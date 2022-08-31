@@ -9,7 +9,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import fr.cefim.android.birthday_app.R;
@@ -18,15 +17,15 @@ import fr.cefim.android.birthday_app.utils.Util;
 
 public class BirthdayAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    private Context mContext;
+    private final Context mContext;
     private List<ListItem> mListItems;
 
-    public BirthdayAdapter(Context mContext, List<ListItem> listItems) {
-        this.mContext = mContext;
-        this.mListItems = listItems;
+    public BirthdayAdapter(Context context, List<ListItem> listItems) {
+        mContext = context;
+        mListItems = listItems;
     }
 
-    public void setListItems(ArrayList<ListItem> mListItems) {
+    public void setListItems(List<ListItem> mListItems) {
         this.mListItems = mListItems;
         notifyDataSetChanged();
     }
@@ -39,7 +38,6 @@ public class BirthdayAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-
         switch (viewType) {
             case ListItem.TYPE_BIRTHDAY:
                 View v1 = LayoutInflater.from(mContext).inflate(R.layout.item_birthday, parent, false);
@@ -57,11 +55,11 @@ public class BirthdayAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         switch (viewHolder.getItemViewType()) {
 
             case ListItem.TYPE_BIRTHDAY:
-                Birthday birthday = ((BirthdayItem) mListItems.get(position)).mBirthday;
+                Birthday birthday = ((BirthdayItem) mListItems.get(position)).birthday;
                 BirthDayViewHolder birthDayViewHolder = (BirthDayViewHolder) viewHolder;
-                birthDayViewHolder.mTextViewName.setText(birthday.firstname + " " + birthday.lastname);
+                birthDayViewHolder.mTextViewName.setText(String.format("%s %s", birthday.firstname, birthday.lastname));
                 birthDayViewHolder.mTextViewDate.setText(birthday.date.getDate()+"");
-                birthDayViewHolder.mTextViewAge.setText(Util.getAge(birthday.date) + " ans");
+                birthDayViewHolder.mTextViewAge.setText(String.format("%s ans", Util.getAge(birthday.date)));
                 break;
             case ListItem.TYPE_MONTH:
                 MonthItem monthItem = (MonthItem) mListItems.get(position);

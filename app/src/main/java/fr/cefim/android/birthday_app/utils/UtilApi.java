@@ -22,6 +22,7 @@ public class UtilApi {
 
     public static final String URL_LOGIN = "http://192.168.1.61:8080/login";
     public static final String CREATE_BIRTHDAY = "http://192.168.1.61:8080/users/%s/birthdays";
+    public static final String DELETE_BIRTHDAY = "http://192.168.1.61:8080/users/%s/birthdays/%s";
 
     public static OkHttpClient client = new OkHttpClient();
 
@@ -50,6 +51,19 @@ public class UtilApi {
         Request request = builder
                 .url(url)
                 .post(body)
+                .build();
+        requestCallback(request, callback);
+    }
+
+    public static void delete(String url, String token, final ApiCallback callback) {
+        Request.Builder builder = new Request.Builder();
+        if (token != null) {
+            builder.addHeader("Authorization", token);
+        }
+
+        Request request = builder
+                .url(url)
+                .delete()
                 .build();
         requestCallback(request, callback);
     }

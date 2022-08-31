@@ -11,6 +11,7 @@ import fr.cefim.android.birthday_app.utils.Util;
 
 public class Birthday {
 
+    public Long id;
     public Date date;
     public String firstname;
     public String lastname;
@@ -23,12 +24,14 @@ public class Birthday {
     public Birthday(String json) throws JSONException, ParseException {
         JSONObject jsonObject = new JSONObject(json);
 
+        id = jsonObject.getLong("id");
         date = Util.initDateFromDB(jsonObject.getString("date"));
         firstname = jsonObject.getString("firstname");
         lastname = jsonObject.getString("lastname");
     }
 
-    public Birthday(Date date, String firstname, String lastname) {
+    public Birthday(Long id, Date date, String firstname, String lastname) {
+        this.id = id;
         this.date = date;
         this.firstname = firstname;
         this.lastname = lastname;
@@ -37,6 +40,7 @@ public class Birthday {
     public JSONObject toJson() {
         JSONObject json = new JSONObject();
         try {
+            json.put("id", id);
             json.put("date", Util.printDate(date));
             json.put("firstname", firstname);
             json.put("lastname", lastname);
